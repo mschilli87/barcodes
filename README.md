@@ -24,13 +24,15 @@
 
 [//]: # (====================================)
 
-[//]: # ( 2016-01-28: adjusted main title to reflect repository name change ('barcodes' -->        )
+[//]: # ( 2016-01-28: fixed Markdown 'comments' containing multi-line parentheses [MS]             )
 
-[//]: # (             'dropseq_barcodes') [MS]                                                     )
+[//]: # (             adjusted main title to reflect repository name change ('barcodes' -->       ))
 
-[//]: # (             fixed change log comment block (was missing author indication for previous   )
+[//]: # ((            'dropseq_barcodes') [MS]                                                     )
 
-[//]: # (             four changes) [MS]                                                           )
+[//]: # (             fixed change log comment block (was missing author indication for previous  ))
+
+[//]: # ((            four changes) [MS]                                                           )
 
 [//]: # (             standardized To-do list style [MS]                                           )
 
