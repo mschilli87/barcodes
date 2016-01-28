@@ -22,7 +22,9 @@
 
 [//]: # (====================================)
 
-[//]: # ( 2016-01-28: fixed purpose (still referred to Pythom implementation)                      )
+[//]: # ( 2016-01-28: fixed To-do (still contained part of Pythom To-Do)                           )
+
+[//]: # (             fixed purpose (still referred to Pythom implementation)                      )
 
 [//]: # (             replaced Python scripts by C program files / added Markdown 'comments' as    )
 
@@ -59,6 +61,5 @@ UMIs.
 * introduce computeKnee function to have an estimate of the number of tops.
 
 ### Low priority
-* allow for more deletions to incorporate arbitrary
-number of bases to check.
+* allow for more deletions
 * standardize/document command line argument parsing
