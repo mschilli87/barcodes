@@ -5,15 +5,17 @@
 
 [//]: # (=====================)
 
-[//]: # ( file:       README.md                                                                   )
+[//]: # ( file:         README.md                                                                 )
 
-[//]: # ( created:    2016-01-28                                                                  )
+[//]: # ( created:      2016-01-28                                                                )
 
-[//]: # ( author(s):  Nikolaos Karaiskos <nikolaos.karaiskos@mdc-berlin.de> (NK),                 )
+[//]: # ( last update:  2016-01-28                                                                )
 
-[//]: # (             Marcel Schilling <marcel.schilling@mdc-berlin.de> (MS)                      )
+[//]: # ( author(s):    Nikolaos Karaiskos <nikolaos.karaiskos@mdc-berlin.de> (NK),               )
 
-[//]: # ( purpose:    automate building of C program for barcode collapsing for drop-seq data     )
+[//]: # (               Marcel Schilling <marcel.schilling@mdc-berlin.de> (MS)                    )
+
+[//]: # ( purpose:      automate building of C program for barcode collapsing for drop-seq data   )
 
 
 [//]: # (====================================)
@@ -22,7 +24,9 @@
 
 [//]: # (====================================)
 
-[//]: # ( 2016-01-28: fixed To-do (still contained part of Pythom To-Do)                           )
+[//]: # ( 2016-01-28: fixed general information comment block (was missing last update comment)    )
+
+[//]: # (             fixed To-do (still contained part of Pythom To-Do)                           )
 
 [//]: # (             fixed purpose (still referred to Pythom implementation)                      )
 
