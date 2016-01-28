@@ -24,13 +24,19 @@
 
 [//]: # (====================================)
 
-[//]: # ( 2016-01-28: standardized To-do list style                                                )
+[//]: # ( 2016-01-28: fixed change log comment block (was missing author indication for previous   )
+
+[//]: # (             four changes) [MS]                                                           )
+
+[//]: # (             standardized To-do list style [MS]                                           )
 
 [//]: # (             fixed general information comment block (was missing last update comment)    )
 
-[//]: # (             fixed To-do (still contained part of Pythom To-Do)                           )
+[//]: # (             [MS]                                                                         )
 
-[//]: # (             fixed purpose (still referred to Pythom implementation)                      )
+[//]: # (             fixed To-do (still contained part of Pythom To-Do) [MS]                      )
+
+[//]: # (             fixed purpose (still referred to Pythom implementation) [MS]                 )
 
 [//]: # (             replaced Python scripts by C program files / added Markdown 'comments' as    )
 
