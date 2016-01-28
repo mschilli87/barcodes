@@ -1,0 +1,24 @@
+#######################
+# general information #
+#######################
+
+# file:       .gitignore
+# created:    2016-01-28
+# author(s):  Marcel Schilling <marcel.schilling@mdc-berlin.de>
+# purpose:    untrack target and temporary/intermediate files created while building of C programs
+#             for barcode collapsing for drop-seq data
+
+
+######################################
+# change log (reverse chronological) #
+######################################
+
+# 2016-01-28: initial version (thinned out version of corresponding project .gitignore file)
+
+
+################
+# binary files #
+################
+
+# binary file of program to re-map barcodes
+/remap_barcodes
