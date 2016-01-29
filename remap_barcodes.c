@@ -16,7 +16,8 @@
 *************************************/
 
 /*
- * 2016-01-29:  fixed typos in comments ('[un]ambigous[ly]' --> '[un]ambiguous[ly]')
+ * 2016-01-29:  named magic numbers (AMBIGUOUS & FILE_END) to improve clarity
+ *              fixed typos in comments ('[un]ambigous[ly]' --> '[un]ambiguous[ly]')
  *              replaced ssize_t by size_t for positive constant (barcode length) & loop indices
  *              (see http://stackoverflow.com/q/15739490 for detailed discussion)
  * 2016-01-13:  added generation of barcodes with 1 deletion
@@ -158,6 +159,12 @@ static const size_t correct_barcode_length=12;
 /* size factor to scale the hash table with to avoid collisions */
 static const unsigned short hash_table_size_factor=2;
 
+/* line length returned by getline on file end */
+static const ssize_t FILE_END=-1;
+
+/* barcode index to use for ambiguously mappable barcodes */
+static const ssize_t AMBIGUOUS=-1;
+
 
 /************
 * variables *
@@ -255,7 +262,7 @@ int main(int argc,char** argv){
   if((file=fopen(file_barcodes_use,"r"))==NULL) exit_with_error(file_barcodes_use);
 
   /* read barcodes to use from file & keep track of their count */
-  for(barcodes_read=0;(barcode_length=getline(&barcode,&buff_size,file))!=-1;++barcodes_read){
+  for(barcodes_read=0;(barcode_length=getline(&barcode,&buff_size,file))!=FILE_END;++barcodes_read){
 
     /* ensure input file does not contain more barcodes than would fit into the hash table */
     if(barcodes_read==n_barcodes_use) exit_with_error("too many barcodes to use in input list");
@@ -270,7 +277,7 @@ int main(int argc,char** argv){
     strcpy(barcodes_use[barcodes_read],barcode);
 
     /* block original barcode in hash table */
-    store(barcode,-1);
+    store(barcode,AMBIGUOUS);
 
 
 /*************************************
@@ -293,7 +300,7 @@ int main(int argc,char** argv){
         if(!fetch(barcode,&target)) store(barcode,barcodes_read);
 
         /* otherwise remove ambiguous old mapping */
-        else store(barcode,-1);
+        else store(barcode,AMBIGUOUS);
 
       } /* all possible nucleotides exhausted for current position */
 
@@ -323,7 +330,7 @@ int main(int argc,char** argv){
         if(!fetch(barcode,&target)) store(barcode,barcodes_read);
 
         /* otherwise remove ambiguous old mapping */
-        else store(barcode,-1);
+        else store(barcode,AMBIGUOUS);
 
       } /* all possible nucleotides exhausted for current position */
 
@@ -359,7 +366,7 @@ int main(int argc,char** argv){
   if((file=fopen(file_barcodes_remap,"r"))==NULL) exit_with_error(file_barcodes_remap);
 
   /* read barcodes to map to the ones to use, if possible, from file */
-  while((barcode_length=getline(&barcode,&buff_size,file))!=-1){
+  while((barcode_length=getline(&barcode,&buff_size,file))!=FILE_END){
 
     /* remove newline from barcode */
     barcode[--barcode_length]='\0';
@@ -368,7 +375,7 @@ int main(int argc,char** argv){
     if(barcode_length!=correct_barcode_length) exit_with_error("wrong barcode length");
 
     /* print mapping if current barcode was unambiguously assigned to a barcode to use */
-    if(fetch(barcode,&target)) if(target!=-1) printf("%s\t%s\n",barcode,barcodes_use[target]);
+    if(fetch(barcode,&target)) if(target!=AMBIGUOUS) printf("%s\t%s\n",barcode,barcodes_use[target]);
   }
 
   /* close file */
