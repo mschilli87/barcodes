@@ -16,7 +16,9 @@
 *************************************/
 
 /*
- * 2016-01-29:  named magic numbers (AMBIGUOUS & FILE_END) to improve clarity
+ * 2016-01-29:  switched top barcode indexing from 0-based to 1-based to use the now-free 0 index
+ *              to block top barcodes in hash (AMBIGUOUS vs. TOP)
+ *              named magic numbers (AMBIGUOUS & FILE_END) to improve clarity
  *              fixed typos in comments ('[un]ambigous[ly]' --> '[un]ambiguous[ly]')
  *              replaced ssize_t by size_t for positive constant (barcode length) & loop indices
  *              (see http://stackoverflow.com/q/15739490 for detailed discussion)
@@ -127,6 +129,14 @@ store(const char *key, intptr_t value)                                          
   p->data = (void *)value;                                                                /* RPAA */
 }                                                                                         /* RPAA */
 
+/* save 1-based indices in 0-based array (index 0 will be used to block top-barcodes) */
+char *save(char *const *array, const size_t index, const char* value){
+  return strcpy(array[index-1],value);
+}
+
+/* get 1-based indices from 0-based array (index 0 will be used to block top-barcodes) */
+const char *get(char *const *const array, const size_t index){return array[index-1];}
+
 
 /************
 * constants *
@@ -164,6 +174,9 @@ static const ssize_t FILE_END=-1;
 
 /* barcode index to use for ambiguously mappable barcodes */
 static const ssize_t AMBIGUOUS=-1;
+
+/* barcode index to use to block top barcodes */
+static const ssize_t TOP=0;
 
 
 /************
@@ -274,10 +287,10 @@ int main(int argc,char** argv){
     if(barcode_length!=correct_barcode_length) exit_with_error("wrong barcode length");
 
     /* store original barcode in array */
-    strcpy(barcodes_use[barcodes_read],barcode);
+    save(barcodes_use,barcodes_read+1,barcode);
 
     /* block original barcode in hash table */
-    store(barcode,AMBIGUOUS);
+    store(barcode,TOP);
 
 
 /*************************************
@@ -297,7 +310,7 @@ int main(int argc,char** argv){
         barcode[i]=nucleotides[j];
 
         /* add new mapping if current mutated barcode is unassigned */
-        if(!fetch(barcode,&target)) store(barcode,barcodes_read);
+        if(!fetch(barcode,&target)) store(barcode,barcodes_read+1);
 
         /* otherwise remove ambiguous old mapping */
         else store(barcode,AMBIGUOUS);
@@ -327,7 +340,7 @@ int main(int argc,char** argv){
         barcode[barcode_length-1]=nucleotides[j];
 
         /* add new mapping if current mutated barcode is unassigned */
-        if(!fetch(barcode,&target)) store(barcode,barcodes_read);
+        if(!fetch(barcode,&target)) store(barcode,barcodes_read+1);
 
         /* otherwise remove ambiguous old mapping */
         else store(barcode,AMBIGUOUS);
@@ -375,7 +388,8 @@ int main(int argc,char** argv){
     if(barcode_length!=correct_barcode_length) exit_with_error("wrong barcode length");
 
     /* print mapping if current barcode was unambiguously assigned to a barcode to use */
-    if(fetch(barcode,&target)) if(target!=AMBIGUOUS) printf("%s\t%s\n",barcode,barcodes_use[target]);
+    if(fetch(barcode,&target)&&target!=AMBIGUOUS)
+      printf("%s\t%s\n",barcode,get(barcodes_use,target));
   }
 
   /* close file */
