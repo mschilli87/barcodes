@@ -5,7 +5,7 @@
 /*
  * file:        remap_barcodes.c
  * created:     2016-01-11
- * last update: 2016-01-13
+ * last update: 2016-01-29
  * author(s):   Marcel Schilling <marcel.schilling@mdc-berlin.de>
  * purpose:     re-map cell barcodes for drop-seq data
  */
@@ -16,6 +16,8 @@
 *************************************/
 
 /*
+ * 2016-01-29:  replaced ssize_t by size_t for positive constant (barcode length) & loop indices
+ *              (see http://stackoverflow.com/q/15739490 for detailed discussion)
  * 2016-01-13:  added generation of barcodes with 1 deletion
  *              renamed variables ('barcode' --> 'target', 'line' --> 'barcode',
  *              'barcode_len' --> 'correct_barcode_length', 'line_length' --> 'barcode_length') for
@@ -150,7 +152,7 @@ static const char nucleotides [n_nucleotides]={'A','C','G','T'};
 enum{n_barcodes_use_default=1000};
 
 /* length of barcodes */
-static const ssize_t correct_barcode_length=12;
+static const size_t correct_barcode_length=12;
 
 /* size factor to scale the hash table with to avoid collisions */
 static const unsigned short hash_table_size_factor=2;
@@ -188,7 +190,7 @@ int main(int argc,char** argv){
   ssize_t barcode_length=0;
 
   /* iterators used for for-loops */
-  ssize_t i,j=0;
+  size_t i,j=0;
 
   /* character array to store barcodes to use */
   char** barcodes_use=NULL;
