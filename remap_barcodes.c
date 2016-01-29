@@ -16,7 +16,8 @@
 *************************************/
 
 /*
- * 2016-01-29:  switched top barcode indexing from 0-based to 1-based to use the now-free 0 index
+ * 2016-01-29:  switched values of AMBIGUOUS & TOP flags
+ *              switched top barcode indexing from 0-based to 1-based to use the now-free 0 index
  *              to block top barcodes in hash (AMBIGUOUS vs. TOP)
  *              named magic numbers (AMBIGUOUS & FILE_END) to improve clarity
  *              fixed typos in comments ('[un]ambigous[ly]' --> '[un]ambiguous[ly]')
@@ -129,12 +130,12 @@ store(const char *key, intptr_t value)                                          
   p->data = (void *)value;                                                                /* RPAA */
 }                                                                                         /* RPAA */
 
-/* save 1-based indices in 0-based array (index 0 will be used to block top-barcodes) */
+/* save 1-based indices in 0-based array (index 0 will represent ambiguity) */
 char *save(char *const *array, const size_t index, const char* value){
   return strcpy(array[index-1],value);
 }
 
-/* get 1-based indices from 0-based array (index 0 will be used to block top-barcodes) */
+/* get 1-based indices from 0-based array (index 0 will represent ambiguity) */
 const char *get(char *const *const array, const size_t index){return array[index-1];}
 
 
@@ -173,10 +174,10 @@ static const unsigned short hash_table_size_factor=2;
 static const ssize_t FILE_END=-1;
 
 /* barcode index to use for ambiguously mappable barcodes */
-static const ssize_t AMBIGUOUS=-1;
+static const ssize_t AMBIGUOUS=0;
 
 /* barcode index to use to block top barcodes */
-static const ssize_t TOP=0;
+static const ssize_t TOP=-1;
 
 
 /************
