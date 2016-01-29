@@ -16,7 +16,8 @@
 *************************************/
 
 /*
- * 2016-01-29:  switched values of AMBIGUOUS & TOP flags
+ * 2016-01-29:  replaced TOP flag with negative index to block top barcodes in hash table
+ *              switched values of AMBIGUOUS & TOP flags
  *              switched top barcode indexing from 0-based to 1-based to use the now-free 0 index
  *              to block top barcodes in hash (AMBIGUOUS vs. TOP)
  *              named magic numbers (AMBIGUOUS & FILE_END) to improve clarity
@@ -176,9 +177,6 @@ static const ssize_t FILE_END=-1;
 /* barcode index to use for ambiguously mappable barcodes */
 static const ssize_t AMBIGUOUS=0;
 
-/* barcode index to use to block top barcodes */
-static const ssize_t TOP=-1;
-
 
 /************
 * variables *
@@ -291,7 +289,7 @@ int main(int argc,char** argv){
     save(barcodes_use,barcodes_read+1,barcode);
 
     /* block original barcode in hash table */
-    store(barcode,TOP);
+    store(barcode,-1*(int)(barcodes_read+1));
 
 
 /*************************************
@@ -344,7 +342,7 @@ int main(int argc,char** argv){
         if(!fetch(barcode,&target)) store(barcode,barcodes_read+1);
 
         /* otherwise remove ambiguous old mapping */
-        else store(barcode,AMBIGUOUS);
+        else if((int)target>0) store(barcode,AMBIGUOUS);
 
       } /* all possible nucleotides exhausted for current position */
 
