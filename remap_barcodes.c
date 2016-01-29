@@ -16,7 +16,8 @@
 *************************************/
 
 /*
- * 2016-01-29:  replaced ssize_t by size_t for positive constant (barcode length) & loop indices
+ * 2016-01-29:  fixed typos in comments ('[un]ambigous[ly]' --> '[un]ambiguous[ly]')
+ *              replaced ssize_t by size_t for positive constant (barcode length) & loop indices
  *              (see http://stackoverflow.com/q/15739490 for detailed discussion)
  * 2016-01-13:  added generation of barcodes with 1 deletion
  *              renamed variables ('barcode' --> 'target', 'line' --> 'barcode',
@@ -291,7 +292,7 @@ int main(int argc,char** argv){
         /* add new mapping if current mutated barcode is unassigned */
         if(!fetch(barcode,&target)) store(barcode,barcodes_read);
 
-        /* otherwise remove ambigous old mapping */
+        /* otherwise remove ambiguous old mapping */
         else store(barcode,-1);
 
       } /* all possible nucleotides exhausted for current position */
@@ -321,7 +322,7 @@ int main(int argc,char** argv){
         /* add new mapping if current mutated barcode is unassigned */
         if(!fetch(barcode,&target)) store(barcode,barcodes_read);
 
-        /* otherwise remove ambigous old mapping */
+        /* otherwise remove ambiguous old mapping */
         else store(barcode,-1);
 
       } /* all possible nucleotides exhausted for current position */
@@ -366,7 +367,7 @@ int main(int argc,char** argv){
     /* ensure input file does not contain any barcode of wrong length */
     if(barcode_length!=correct_barcode_length) exit_with_error("wrong barcode length");
 
-    /* print mapping if current barcode was unambigously assigned to a barcode to use */
+    /* print mapping if current barcode was unambiguously assigned to a barcode to use */
     if(fetch(barcode,&target)) if(target!=-1) printf("%s\t%s\n",barcode,barcodes_use[target]);
   }
 
