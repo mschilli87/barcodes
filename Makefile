@@ -2,16 +2,18 @@
 # general information #
 #######################
 
-# file:       Makefile
-# created:    2016-01-28
-# author(s):  Marcel Schilling <marcel.schilling@mdc-berlin.de>
-# purpose:    automate building of C program for barcode collapsing for drop-seq data
+# file:         Makefile
+# created:      2016-01-28
+# last update:  2016-02-01
+# author(s):    Marcel Schilling <marcel.schilling@mdc-berlin.de>
+# purpose:      automate building of C program for barcode collapsing for drop-seq data
 
 
 ######################################
 # change log (reverse chronological) #
 ######################################
 
+# 2016-02-01: switched GCC optimization flag from -O3 to -O1 to avoid heisenbug manifesting with -O2
 # 2016-01-28: initial version (thinned out version of corresponding project Makefile)
 
 
@@ -20,7 +22,9 @@
 #########################
 
 # command line flags to use for gcc
-GCC_FLAGS:=-Wall -Ofast -Wpedantic -Werror -march=native -mtune=native
+# Note: -O2 results in a heisenbug (segmentation fault with the current code)
+# TODO: make implementation robust to allow -O3 again
+GCC_FLAGS:=-Wall -O1 -Wpedantic -Werror -march=native -mtune=native
 
 
 ####################

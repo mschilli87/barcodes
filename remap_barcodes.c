@@ -5,7 +5,7 @@
 /*
  * file:        remap_barcodes.c
  * created:     2016-01-11
- * last update: 2016-01-29
+ * last update: 2016-02-01
  * author(s):   Marcel Schilling <marcel.schilling@mdc-berlin.de>
  * purpose:     re-map cell barcodes for drop-seq data
  */
@@ -16,6 +16,8 @@
 *************************************/
 
 /*
+ * 2016-02-01:  added collapsing of barcodes to use that differ in one position only amogst each
+ *              other
  * 2016-01-29:  replaced TOP flag with negative index to block top barcodes in hash table
  *              switched values of AMBIGUOUS & TOP flags
  *              switched top barcode indexing from 0-based to 1-based to use the now-free 0 index
@@ -81,6 +83,35 @@
 #include <errno.h>    /* errno                                         */
 
 
+/*************
+* data types *
+*************/
+
+/* entry in hit list (see below)*/
+typedef struct hit_list_entry{
+  /*
+   * ID of one barcode to use that has hamming distance 1 to the barcode to use corresponding to the
+   * hit list the entry belongs to
+   */
+  size_t hit_id;
+
+  /* position in which the two barcodes to use differ (hamming distance 1) */
+  size_t pos_mismatch;
+
+  /* pointer to the next entry in hit list the entry belongs to */
+  struct hit_list_entry* next;
+} hit_list_entry_t;
+
+/* hit list with barcodes to use that have hamming distance 1 to a certain barcode to use */
+typedef struct hit_list{
+
+  /* pointer to the first entry in the list */
+  hit_list_entry_t* head;
+
+  /* length of the list */
+  size_t length;
+} hit_list_t;
+
 
 /************
 * functions *
@@ -139,6 +170,85 @@ char *save(char *const *array, const size_t index, const char* value){
 /* get 1-based indices from 0-based array (index 0 will represent ambiguity) */
 const char *get(char *const *const array, const size_t index){return array[index-1];}
 
+/* create an empty hit list */
+hit_list_t* empty_hit_list(){
+
+  /* create a new hit list object (malloc'ed memory must be free'ed later) */
+  hit_list_t* the_list=(hit_list_t*)malloc(sizeof(hit_list_t));
+
+  /* empty list is headless */
+  the_list->head=NULL;
+
+  /* empty list has no entries */
+  the_list->length=0;
+
+  /* return (pointer to) newly generated empty list */
+  return(the_list);
+}
+
+/* insert a barcode ID into a hit list */
+void insert(hit_list_t* the_list,const size_t the_hit_id,const size_t the_pos_mismatch){
+
+  /* create a new hit_list_entry object (malloc'ed memory must be free'ed later) */
+  hit_list_entry_t* the_entry=(hit_list_entry_t*)malloc(sizeof(hit_list_entry_t));
+
+  /* assign given barcode ID to new hit list entry */
+  the_entry->hit_id=the_hit_id;
+
+  /* assign given mismatch position to new hit list entry */
+  the_entry->pos_mismatch=the_pos_mismatch;
+
+  /* new entry will be inserted before previous list head */
+  the_entry->next=the_list->head;
+
+  /* new entry becomes new list head */
+  the_list->head=the_entry;
+
+  /* list length increased by 1 */
+  ++(the_list->length);
+}
+
+/* delete a hit list */
+void delete_hit_list(hit_list_t* the_list){
+
+  /* only delete list if it exists */
+  if(the_list!=NULL){
+
+    /* pointer to entry to delete next from the list */
+    hit_list_entry_t* the_entry=NULL;
+
+    /* as long as the list still has entries */
+    for(the_entry=the_list->head;the_entry!=NULL;the_entry=the_list->head){
+
+      /* separate the first entry from the list */
+      the_list->head=the_entry->next;
+
+      /* delete the separate entry by free'ing its memory */
+      free(the_entry);
+
+      /* un-set pointer to free'ed memory */
+      the_entry=NULL;
+    }
+
+    /* delete the empty list by free'ing its memory */
+    free(the_list);
+
+    /* un-set pointer to free'ed memory */
+    the_list=NULL;
+
+  } /* existing list deleted */
+}
+
+/* clear a hit list */
+void clear_hit_list(hit_list_t* the_list){
+
+  /* delete old hit list */
+  delete_hit_list(the_list);
+
+  /* assign new empty hit list */
+  the_list=empty_hit_list();
+}
+
 
 /************
 * constants *
@@ -176,6 +286,9 @@ static const ssize_t FILE_END=-1;
 
 /* barcode index to use for ambiguously mappable barcodes */
 static const ssize_t AMBIGUOUS=0;
+
+/* character used to represent 'any nucleotide' */
+static const char any_nucleotide='N';
 
 
 /************
@@ -221,6 +334,12 @@ int main(int argc,char** argv){
   /* index of barcode to use retrieved from hash table */
   intptr_t target=NULL;
 
+  /* array to count number of top barcodes having hamming distance 1 to each top hit */
+  hit_list_t** top_hits=NULL;
+
+  /* pointer to iterate over hit lists */
+  hit_list_entry_t* top_hit=NULL;
+
 
 /*************
 * parameters *
@@ -260,10 +379,13 @@ int main(int argc,char** argv){
              )
     ) exit_with_error("cannot initialize hash table");
 
-  /* initialize barcode array (malloc'ed memory must be free'ed later) */
+  /* initialize barcode & top hits arrays (malloc'ed memory must be free'ed later) */
   barcodes_use=(char**)malloc(n_barcodes_use*sizeof(char*));
-  for(i=0;i<n_barcodes_use;++i)
+  top_hits=(hit_list_t**)malloc(n_barcodes_use*sizeof(hit_list_t*));
+  for(i=0;i<n_barcodes_use;++i){
     barcodes_use[i]=(char*)malloc((correct_barcode_length+1)*sizeof(char));
+    top_hits[i]=empty_hit_list();
+  }
 
 
 /***********************
@@ -310,6 +432,16 @@ int main(int argc,char** argv){
 
         /* add new mapping if current mutated barcode is unassigned */
         if(!fetch(barcode,&target)) store(barcode,barcodes_read+1);
+
+        /* count top hit if current mutated barcode matched unmutated barcode read previously*/
+        else if((int)target<0){
+
+          /* add target to top hits of current barcode */
+          insert(top_hits[barcodes_read],-1*(int)target,i);
+
+          /* add current barcode to top hits of target */
+          insert(top_hits[-1*(int)target-1],barcodes_read+1,i);
+        }
 
         /* otherwise remove ambiguous old mapping */
         else store(barcode,AMBIGUOUS);
@@ -369,10 +501,58 @@ int main(int argc,char** argv){
   if(barcodes_read<n_barcodes_use) exit_with_error("too little barcodes to use in input list");
 
 
-/******************
-* re-map barcodes *
-******************/
+/********************************************
+* re-map barcodes to use amongst each other *
+********************************************/
 
+  /* check all barcodes to use for potential collapsing with other barcodes to use */
+  for(i=0;i<n_barcodes_use;++i)
+
+    /* skip barcodes to use that have hamming distance >1 to all other barcodes to use */
+    if(top_hits[i]->length!=0){
+
+   /* compare hit length lists of all hits to number of hits */
+      for(top_hit=top_hits[i]->head
+         ;top_hit!=NULL&&top_hits[top_hit->hit_id-1]->length==top_hits[i]->length
+         ;top_hit=top_hit->next){}
+
+   /*
+    * if all barcodes to use that have hamming distance 1 to the current barcode to use have the
+    * same number of barcodes to use with hamming distance 1 to them as the current one, then
+    * they all differ in the same postion and can be collapsed by setting this position to N in
+    * all of those barcodes
+    */
+      if(top_hit==NULL){
+
+     /* print mapping of current barcode to use to the collapsed one while remapping it */
+        printf("%s\t",get(barcodes_use,i+1));
+        barcodes_use[i][top_hits[i]->head->pos_mismatch]=any_nucleotide;
+        printf("%s\n",get(barcodes_use,i+1));
+
+     /* remap all barcodes to use with hamming distance 1 to the current one */
+        for(top_hit=top_hits[i]->head;top_hit!=NULL;top_hit=top_hit->next){
+
+       /* print mapping of current barcode to use to the collapsed one while remapping it */
+          printf("%s\t",get(barcodes_use,top_hit->hit_id));
+          barcodes_use[top_hit->hit_id-1][top_hit->pos_mismatch]=any_nucleotide;
+          printf("%s\n",get(barcodes_use,top_hit->hit_id));
+
+       /* clear corresponding hit lists to avoid double-processing */
+          clear_hit_list(top_hits[top_hit->hit_id-1]);
+
+        } /* all barcodes to use with hamming distance 1 to the current one remapped */
+
+      } /* current collapsing done */
+
+    } /* current barcode checked for potential collapsing */
+
+  /* unset now un-used pointer iterator */
+  top_hit=NULL;
+
+
+/***************************************************************
+* re-map barcodes to map to the ones to use to the ones to use *
+***************************************************************/
 
   /* open file with barcodes to map the ones to use, if possible for reading */
   if((file=fopen(file_barcodes_remap,"r"))==NULL) exit_with_error(file_barcodes_remap);
@@ -403,8 +583,12 @@ int main(int argc,char** argv){
   free(barcode);
 
   /* clean-up by free'ing previously malloc'ed memory */
-  for(i=0;i<n_barcodes_use;++i) free(barcodes_use[i]);
+  for(i=0;i<n_barcodes_use;++i){
+    free(barcodes_use[i]);
+    delete_hit_list(top_hits[i]);
+  }
   free(barcodes_use);
+  free(top_hits);
 
   /*                                                                                       * RPAA *
    * DO NOT CALL hdestroy().                                                               * RPAA *
